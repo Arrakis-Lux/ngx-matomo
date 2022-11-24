@@ -1,4 +1,4 @@
-import { Inject, Injectable, Optional } from '@angular/core';
+import { Inject, Injectable, NgZone, Optional } from '@angular/core';
 import { Event, NavigationEnd, Router } from '@angular/router';
 import { MatomoTracker } from '@ngx-matomo/tracker';
 import {
@@ -58,6 +58,7 @@ function isNotExcluded(excludeConfig: ExclusionConfig): (event: NavigationEnd) =
 export class MatomoRouter {
   constructor(
     private readonly router: Router,
+    private readonly ngZone: NgZone,
     @Inject(INTERNAL_ROUTER_CONFIGURATION)
     private readonly config: InternalRouterConfiguration,
     @Inject(MATOMO_PAGE_TITLE_PROVIDER)
@@ -135,13 +136,15 @@ export class MatomoRouter {
   }
 
   private trackPageView(pageUrl: string): void {
-    this.tracker.trackPageView();
-
-    if (this.config.enableLinkTracking) {
-      this.tracker.enableLinkTracking(true);
-    }
-
-    // Set referrer for next page view
-    this.tracker.setReferrerUrl(pageUrl);
+    this.ngZone.runOutsideAngular(() => setTimeout(() => {
+      this.tracker.trackPageView();
+  
+      if (this.config.enableLinkTracking) {
+        this.tracker.enableLinkTracking(true);
+      }
+  
+      // Set referrer for next page view
+      this.tracker.setReferrerUrl(pageUrl);
+    }, 0))
   }
 }
